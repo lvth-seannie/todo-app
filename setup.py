@@ -11,7 +11,7 @@ usage:
 from setuptools import setup
 
 APP = ["app.py"]
-DATA_FILES = [("ui", ["ui/index.html", "ui/style.css", "ui/script.js", "ui/logo.svg"])]
+DATA_FILES = [("ui", ["ui/index.html", "ui/style.css", "ui/script.js"])]
 OPTIONS = {
     "argv_emulation": False,
     "iconfile": "icon.icns",

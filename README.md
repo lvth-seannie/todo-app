@@ -1,4 +1,4 @@
-# cute todo-app
+# ✿ cute todo-app
 
 a minimal local to-do app with a warm butter yellow theme. calendar on the left to pick a day, today/completed tab switch, category tagging, and a clean task bar.
 
@@ -46,6 +46,12 @@ a window titled "mini-todo" opens. close the window to quit — your tasks stay 
 - **today tab** — shows open tasks for the selected day. click the circle to mark done; click the text to edit; `✕` on hover to delete.
 - **completed tab** — shows finished tasks with the time they were completed.
 - **categories (left panel, below calendar)** — click `＋` to create a new category. categories appear as colored badges on tasks and as a list in the sidebar. hover a category to delete it.
+
+## app demo 
+
+![](images/appdemo1.png)
+
+![](images/appdemo2.png)
 
 ## notes
 
