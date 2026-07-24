@@ -1,0 +1,428 @@
+/* ---------------------------------------------------------------------
+   Design tokens — "Figma app" look: quiet dark panels, hairline borders,
+   soft shadows instead of hard ones, one purple accent, generous radius.
+--------------------------------------------------------------------- */
+:root {
+  --bg-canvas: hsl(0, 0%, 0%);
+  --bg-panel: #000000;
+  --bg-elevated: #000000;
+  --bg-elevated-hover: hsl(182, 92%, 52%);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --text-primary: #f2f2f4;
+  --text-secondary: #9a9aa3;
+  --text-muted: #6b6b73;
+
+  --accent: #007e0f;
+  --accent-soft: rgba(148, 87, 255, 0.16);
+  --accent-cyan: #5ce1e6;
+  --success: #4ecb87;
+  --danger: #ff6b6b;
+
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 7px;
+
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.28);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
+    "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+  overflow: hidden;
+}
+
+/* Thin, unobtrusive scrollbars in the Figma-panel spirit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------
+   App shell
+--------------------------------------------------------------------- */
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ---------------------------------------------------------------------
+   Sidebar
+--------------------------------------------------------------------- */
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
+  padding: 18px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-elevated);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.tab {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* -- calendar ---------------------------------------------------------- */
+.calendar {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+.cal-nav {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+
+.cal-nav:hover {
+  background: var(--bg-elevated-hover);
+  color: var(--text-primary);
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.cal-weekdays span {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-bottom: 6px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 3px;
+}
+
+.cal-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.cal-cell.empty {
+  cursor: default;
+}
+
+.cal-cell:not(.empty):hover {
+  background: var(--bg-elevated-hover);
+}
+
+.cal-cell.today {
+  color: var(--accent-cyan);
+  font-weight: 700;
+}
+
+.cal-cell.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.cal-cell.has-tasks::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent-cyan);
+}
+
+.cal-cell.selected.has-tasks::after {
+  background: #fff;
+}
+
+.jump-today {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 120ms var(--ease);
+}
+
+.jump-today:hover {
+  color: var(--accent-cyan);
+}
+
+/* ---------------------------------------------------------------------
+   Main panel
+--------------------------------------------------------------------- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.composer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#taskInput {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: text;
+  user-select: text;
+  transition: border-color 120ms var(--ease), background 120ms var(--ease);
+}
+
+#taskInput::placeholder {
+  color: var(--text-muted);
+}
+
+#taskInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-elevated-hover);
+}
+
+.add-btn {
+  padding: 10px 22px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13.5px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: 0 2px 10px var(--accent-soft);
+  transition: background 120ms var(--ease), transform 80ms var(--ease);
+}
+
+.add-btn:hover {
+  background: #a56bff;
+}
+
+.add-btn:active {
+  transform: scale(0.97);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px 32px;
+}
+
+.section-title {
+  margin: 0 0 20px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  letter-spacing: 0.01em;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 4px 2px;
+}
+
+/* -- task rows ----------------------------------------------------------- */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+.task-row:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.task-check {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 120ms var(--ease), background 120ms var(--ease);
+}
+
+.task-check:hover {
+  border-color: var(--accent-cyan);
+}
+
+.task-check.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.task-check.checked::after {
+  content: "✓";
+  font-size: 11px;
+  color: #10241a;
+  font-weight: 700;
+}
+
+.task-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: text;
+  user-select: text;
+  word-break: break-word;
+}
+
+.task-text.done {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.task-time {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.task-delete {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms var(--ease), background 120ms var(--ease),
+    color 120ms var(--ease);
+}
+
+.task-row:hover .task-delete {
+  opacity: 1;
+}
+
+.task-delete:hover {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+}
