@@ -38,10 +38,21 @@ function getCatIndex(name) {
   return (i >= 0 ? i : 0) % 6;
 }
 
+// ── Theme ──
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  localStorage.setItem("todo-theme", theme);
+  document.querySelectorAll(".theme-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === theme);
+  });
+}
+
 window.addEventListener("pywebviewready", init);
 if (window.pywebview) init();
 
 async function init() {
+  applyTheme(localStorage.getItem("todo-theme") || "yellow");
   bindEvents();
   await Promise.all([refreshDaysWithTasks(), loadCategories()]);
   renderCalendar();
@@ -70,6 +81,10 @@ function bindEvents() {
   document.getElementById("catInput").addEventListener("keydown", e => {
     if (e.key === "Enter") addCategory();
     if (e.key === "Escape") document.getElementById("addCatForm").classList.add("hidden");
+  });
+
+  document.querySelectorAll(".theme-btn").forEach(btn => {
+    btn.addEventListener("click", () => applyTheme(btn.dataset.theme));
   });
 }
 
@@ -193,7 +208,7 @@ function renderCategories() {
 function refreshCategorySelect() {
   const select = document.getElementById("categorySelect");
   const prev = select.value;
-  select.innerHTML = '<option value="">No category</option>';
+  select.innerHTML = '<option value="">no category</option>';
   state.categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
