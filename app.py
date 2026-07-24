@@ -21,7 +21,12 @@ from datetime import datetime
 import webview
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(APP_DIR, "tasks.json")
+
+# Always store tasks in ~/Library/Application Support/mini-todo/
+# so the location is consistent whether running from terminal or as a .app bundle.
+DATA_DIR = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "mini-todo")
+os.makedirs(DATA_DIR, exist_ok=True)
+DATA_FILE = os.path.join(DATA_DIR, "tasks.json")
 
 _lock = threading.Lock()
 

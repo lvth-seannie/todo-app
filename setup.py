@@ -1,10 +1,9 @@
 """
-Optional: package Retro ToDo as a double-clickable macOS .app bundle.
+package mini-todo as a double-clickable macOS .app bundle.
 
-This does NOT require Xcode — only the Xcode Command Line Tools (a small
-subset of Xcode) and py2app. See README.md for full instructions.
+does not require xcode — only the xcode command line tools and py2app.
 
-Usage:
+usage:
     pip install py2app
     python3 setup.py py2app
 """
@@ -12,15 +11,16 @@ Usage:
 from setuptools import setup
 
 APP = ["app.py"]
-DATA_FILES = [("ui", ["ui/index.html", "ui/style.css", "ui/script.js"])]
+DATA_FILES = [("ui", ["ui/index.html", "ui/style.css", "ui/script.js", "ui/logo.svg"])]
 OPTIONS = {
     "argv_emulation": False,
+    "iconfile": "icon.icns",
     "packages": ["webview"],
     "plist": {
-        "CFBundleName": "Retro ToDo",
-        "CFBundleDisplayName": "Retro ToDo",
+        "CFBundleName": "mini-todo",
+        "CFBundleDisplayName": "mini-todo",
         "CFBundleShortVersionString": "1.0.0",
-        "CFBundleIdentifier": "local.retrotodo.app",
+        "CFBundleIdentifier": "local.minitodo.app",
         "NSHighResolutionCapable": True,
     },
 }

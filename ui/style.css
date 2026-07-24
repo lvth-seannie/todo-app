@@ -102,9 +102,9 @@ button { font-family: inherit; border: none; background: none; color: inherit; c
 }
 
 .brand-icon {
-  font-size: 17px;
-  color: var(--accent);
+  font-size: 18px;
   line-height: 1;
+  color: var(--accent);
 }
 
 .brand-name {
