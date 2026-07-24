@@ -1,16 +1,16 @@
 """
-Retro ToDo — a tiny local desktop to-do app.
-
-Layout is inspired by a retro terminal-style to-do app (calendar + Today/
-Completed tabs), restyled with a clean, modern "Figma-app" visual language:
-soft dark panels, rounded corners, subtle borders/shadows, a single purple
-accent, and pointer cursors on anything clickable.
+Todo App — Korean aesthetic local desktop to-do app.
 
 Run locally with:
     python3 app.py
 
-All data is stored in a plain JSON file (tasks.json) next to this script —
-no server, no database, nothing leaves your machine.
+All data is stored in a plain JSON file (tasks.json) next to this script.
+Data shape:
+{
+  "categories": ["Work", "Personal", ...],
+  "<YYYY-MM-DD>": [{id, text, done, completed_at, category}, ...],
+  ...
+}
 """
 
 import json
@@ -23,21 +23,20 @@ import webview
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(APP_DIR, "tasks.json")
 
-# Guards concurrent writes from the webview UI thread.
 _lock = threading.Lock()
 
 
 class Api:
     """Exposed to the frontend as `window.pywebview.api.<method>(...)`.
 
-    Every public method here is callable from JavaScript and returns
-    JSON-serialisable data (pywebview handles the marshalling).
+    Every public method is callable from JavaScript and returns
+    JSON-serialisable data.
     """
 
     def __init__(self):
         self.data = self._load()
 
-    # -- persistence -----------------------------------------------------
+    # -- persistence ---------------------------------------------------------
 
     def _load(self):
         if os.path.exists(DATA_FILE):
@@ -45,7 +44,6 @@ class Api:
                 with open(DATA_FILE, "r", encoding="utf-8") as f:
                     return json.load(f)
             except (json.JSONDecodeError, OSError):
-                # Corrupt or unreadable file: start fresh rather than crash.
                 return {}
         return {}
 
@@ -54,13 +52,35 @@ class Api:
             with open(DATA_FILE, "w", encoding="utf-8") as f:
                 json.dump(self.data, f, indent=2)
 
-    # -- task operations (called from script.js) -------------------------
+    # -- category operations -------------------------------------------------
+
+    def get_categories(self):
+        return self.data.get("categories", [])
+
+    def add_category(self, name):
+        name = (name or "").strip()
+        if not name:
+            return self.get_categories()
+        with _lock:
+            cats = self.data.setdefault("categories", [])
+            if name not in cats:
+                cats.append(name)
+        self._save()
+        return self.data["categories"]
+
+    def delete_category(self, name):
+        with _lock:
+            cats = self.data.get("categories", [])
+            self.data["categories"] = [c for c in cats if c != name]
+        self._save()
+        return self.data.get("categories", [])
+
+    # -- task operations -----------------------------------------------------
 
     def get_tasks(self, date):
-        """Return the list of tasks for a given ISO date string (YYYY-MM-DD)."""
         return self.data.get(date, [])
 
-    def add_task(self, date, text):
+    def add_task(self, date, text, category=""):
         text = (text or "").strip()
         if not text:
             return self.data.get(date, [])
@@ -71,6 +91,7 @@ class Api:
                 "text": text,
                 "done": False,
                 "completed_at": None,
+                "category": (category or "").strip(),
             }
             self.data[date].append(task)
         self._save()
@@ -108,21 +129,24 @@ class Api:
         return self.data.get(date, [])
 
     def get_days_with_tasks(self):
-        """Used to put a small dot on calendar days that have any tasks."""
-        return {d: len(v) for d, v in self.data.items() if v}
+        return {
+            d: len(v)
+            for d, v in self.data.items()
+            if d != "categories" and isinstance(v, list) and v
+        }
 
 
 def main():
     api = Api()
     ui_path = os.path.join(APP_DIR, "ui", "index.html")
     webview.create_window(
-        "Retro ToDo",
+        "mini-todo",
         ui_path,
         js_api=api,
         width=1040,
         height=700,
         min_size=(760, 560),
-        background_color="#1a1a1e",
+        background_color="#FFFBF0",
     )
     webview.start()
 

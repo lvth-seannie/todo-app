@@ -2,17 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Retro ToDo</title>
+  <title>todo</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
 
-    <!-- Sidebar -->
+    <!-- ── Sidebar ── -->
     <aside class="sidebar">
+
+      <div class="brand">
+        <span class="brand-icon">✿</span>
+        <span class="brand-name">mini-todo</span>
+      </div>
+
       <div class="tabs">
-        <button id="tabToday" class="tab active">Today</button>
-        <button id="tabCompleted" class="tab">Completed</button>
+        <button id="tabToday" class="tab active">today</button>
+        <button id="tabCompleted" class="tab">completed</button>
       </div>
 
       <div class="calendar">
@@ -21,38 +27,58 @@
           <span id="calTitle" class="cal-title">JULY 2026</span>
           <button id="nextMonth" class="cal-nav" aria-label="Next month">›</button>
         </div>
-
         <div class="cal-weekdays">
           <span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span>
         </div>
-
         <div id="calGrid" class="cal-grid"></div>
       </div>
 
-      <button id="todayBtn" class="jump-today">Jump to today</button>
+      <button id="todayBtn" class="jump-today">↩ jump to today</button>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Categories -->
+      <div class="cat-section">
+        <div class="cat-section-hd">
+          <span class="cat-section-lbl">categories</span>
+          <button id="addCatBtn" class="cat-add-btn" title="new category">＋</button>
+        </div>
+        <div id="addCatForm" class="add-cat-form hidden">
+          <input id="catInput" type="text" placeholder="category name…" maxlength="24" />
+        </div>
+        <div id="categoryList" class="cat-list"></div>
+      </div>
+
     </aside>
 
-    <!-- Main -->
+    <!-- ── Main ── -->
     <main class="main">
+
       <div class="composer">
         <input
           id="taskInput"
           type="text"
-          placeholder="What do you need to do?"
+          placeholder="add a task..."
           autocomplete="off"
           spellcheck="false"
         />
-        <button id="addBtn" class="add-btn">Add</button>
+        <div class="cat-select-wrap">
+          <select id="categorySelect" class="cat-select">
+            <option value="">no category</option>
+          </select>
+          <span class="cat-select-arrow">▾</span>
+        </div>
+        <button id="addBtn" class="add-btn">add</button>
       </div>
 
       <div class="content">
-        <h1 id="sectionTitle" class="section-title">TODAY (Jul 24)</h1>
+        <h1 id="sectionTitle" class="section-title">TODAY</h1>
         <div id="taskList" class="task-list"></div>
       </div>
+
     </main>
 
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
