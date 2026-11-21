@@ -1,9 +1,9 @@
 """
-generate_icon.py — creates icon.icns for the mini-todo app.
+generate_icon.py — creates images/icon.icns for the mini-todo app.
 
 draws a ✿ flower on a butter yellow rounded square background.
 
-also writes icon-ios.png / icon-ios.jpg: an opaque full-bleed square for an
+also writes images/icon-ios.png / images/icon-ios.jpg: an opaque full-bleed square for an
 iPhone home screen shortcut (iOS rounds the corners itself and turns any
 transparency black).
 
@@ -94,9 +94,9 @@ ICON_SIZES = {
 
 def save_ios_icon():
     img = draw_icon(1024, full_bleed=True).convert("RGB")
-    img.save("icon-ios.png")
-    img.save("icon-ios.jpg", quality=95)
-    print("✓ icon-ios.png and icon-ios.jpg created")
+    img.save("images/icon-ios.png")
+    img.save("images/icon-ios.jpg", quality=95)
+    print("✓ images/icon-ios.png and images/icon-ios.jpg created")
 
 
 def main():
@@ -113,12 +113,12 @@ def main():
         print(f"  {filename}")
 
     result = subprocess.run(
-        ["iconutil", "-c", "icns", iconset],
+        ["iconutil", "-c", "icns", iconset, "-o", "images/icon.icns"],
         capture_output=True, text=True,
     )
     if result.returncode == 0:
         shutil.rmtree(iconset)
-        print("✓ icon.icns created")
+        print("✓ images/icon.icns created")
     else:
         print("error:", result.stderr)
         print("png files saved to", iconset)

@@ -17,7 +17,7 @@ DATA_FILES = [
 ]
 OPTIONS = {
     "argv_emulation": False,
-    "iconfile": "icon.icns",
+    "iconfile": "images/icon.icns",
     "packages": ["webview"],
     "plist": {
         "CFBundleName": "mini-todo",

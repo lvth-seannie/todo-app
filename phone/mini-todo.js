@@ -13,7 +13,7 @@
 // The UI files (index.html, style.css, script.js) are copied into
 // iCloud Drive/Applications/mini-todo/ui/ by the Mac app on every launch.
 
-const VERSION = "2026-11-21e";  // bump when changing this file, to spot stale iCloud copies
+const VERSION = "2026-11-21f";  // bump when changing this file, to spot stale iCloud copies
 
 const fm = FileManager.iCloud();
 
@@ -308,7 +308,11 @@ async function run() {
 
 // -- entry point -----------------------------------------------------------
 
-if (fm.bookmarkExists("mini-todo")) {
+if (!config.runsInApp) {
+  // Shortcuts/Siri can't show the full-screen app view (or alerts), so explain instead.
+  log("mini-todo: started outside the app (Run In App is off)", true);
+  throw new Error('Open this Shortcut\'s "Run Script" action (tap ›) and turn on "Run In App".');
+} else if (fm.bookmarkExists("mini-todo")) {
   try {
     await run();
   } catch (e) {
