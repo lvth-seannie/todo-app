@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="mini-todo" />
   <title>todo</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -23,7 +26,7 @@
       </div>
 
       <div class="tabs">
-        <button id="tabToday" class="tab active">today</button>
+        <button id="tabTodo" class="tab active">to-do</button>
         <button id="tabCompleted" class="tab">completed</button>
       </div>
 
@@ -40,6 +43,7 @@
       </div>
 
       <button id="todayBtn" class="jump-today">↩ jump to today</button>
+      <button id="phoneLink" class="jump-today hidden"></button>
 
       <div class="sidebar-divider"></div>
 

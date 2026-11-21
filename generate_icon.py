@@ -3,6 +3,10 @@ generate_icon.py — creates icon.icns for the mini-todo app.
 
 draws a ✿ flower on a butter yellow rounded square background.
 
+also writes icon-ios.png / icon-ios.jpg: an opaque full-bleed square for an
+iPhone home screen shortcut (iOS rounds the corners itself and turns any
+transparency black).
+
 run once before building the .app bundle:
     pip install Pillow
     python3 generate_icon.py
@@ -16,7 +20,7 @@ import subprocess
 from PIL import Image, ImageDraw
 
 
-def draw_icon(size):
+def draw_icon(size, full_bleed=False):
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
@@ -25,19 +29,27 @@ def draw_icon(size):
 
     cx, cy = size / 2, size / 2
 
-    # ── butter yellow rounded square background ──
-    pad = s(2)
-    d.rounded_rectangle(
-        [pad, pad, size - pad, size - pad],
-        radius=s(22),
-        fill=(232, 176, 32, 255),
-    )
-    # subtle lighter sheen at top
-    d.rounded_rectangle(
-        [pad, pad, size - pad, size * 0.55],
-        radius=s(22),
-        fill=(252, 220, 80, 50),
-    )
+    if full_bleed:
+        # ── iOS: square edge to edge, sheen blended in so the image stays opaque ──
+        d.rectangle([0, 0, size, size], fill=(232, 176, 32, 255))
+        sheen = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        ImageDraw.Draw(sheen).rectangle([0, 0, size, size * 0.55], fill=(252, 220, 80, 50))
+        img.alpha_composite(sheen)
+        d = ImageDraw.Draw(img)
+    else:
+        # ── butter yellow rounded square background ──
+        pad = s(2)
+        d.rounded_rectangle(
+            [pad, pad, size - pad, size - pad],
+            radius=s(22),
+            fill=(232, 176, 32, 255),
+        )
+        # subtle lighter sheen at top
+        d.rounded_rectangle(
+            [pad, pad, size - pad, size * 0.55],
+            radius=s(22),
+            fill=(252, 220, 80, 50),
+        )
 
     # ── ✿ flower ──
     white = (255, 255, 255, 245)
@@ -80,7 +92,16 @@ ICON_SIZES = {
 }
 
 
+def save_ios_icon():
+    img = draw_icon(1024, full_bleed=True).convert("RGB")
+    img.save("icon-ios.png")
+    img.save("icon-ios.jpg", quality=95)
+    print("✓ icon-ios.png and icon-ios.jpg created")
+
+
 def main():
+    save_ios_icon()
+
     iconset = "icon.iconset"
     os.makedirs(iconset, exist_ok=True)
 

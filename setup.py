@@ -11,7 +11,10 @@ usage:
 from setuptools import setup
 
 APP = ["app.py"]
-DATA_FILES = [("ui", ["ui/index.html", "ui/style.css", "ui/script.js"])]
+DATA_FILES = [
+    ("ui", ["ui/index.html", "ui/style.css", "ui/script.js"]),
+    ("phone", ["phone/mini-todo.js"]),
+]
 OPTIONS = {
     "argv_emulation": False,
     "iconfile": "icon.icns",

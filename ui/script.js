@@ -1,5 +1,8 @@
 // Todo App — frontend logic.
-// Talks to the Python backend via window.pywebview.api (see app.py).
+// Talks to the backend in one of three ways:
+//   desktop — window.pywebview.api in the Mac window (see app.py)
+//   web     — HTTP /api/<method> when opened in a browser over Wi-Fi
+//   phone   — window.SCRIPTABLE bridge inside the Scriptable iPhone app (see phone/mini-todo.js)
 
 const MONTH_NAMES = [
   "january","february","march","april","may","june",
@@ -14,10 +17,42 @@ const state = {
   selectedDate: formatDate(new Date()),
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
-  activeTab: "today",
+  activeTab: "todo",
+  activeCategory: null,
   daysWithTasks: {},
   categories: [],
 };
+
+// Decided by explicit markers, not the URL: pywebview also serves the desktop
+// window over http://127.0.0.1, so the protocol can't tell desktop and web apart.
+const MODE = window.SCRIPTABLE ? "phone"
+  : window.MINI_TODO_WEB ? "web"
+  : "desktop";
+
+// localStorage can be unavailable (e.g. in the Scriptable web view), so never let it throw.
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+const WEB_KEY = new URLSearchParams(location.search).get("key")
+  || store.get("todo-web-key") || "";
+if (MODE === "web" && WEB_KEY) store.set("todo-web-key", WEB_KEY);
+
+// Same method names as the Python Api class, whichever transport is in use.
+const api = new Proxy({}, {
+  get: (_, name) => async (...args) => {
+    if (MODE === "desktop") return window.pywebview.api[name](...args);
+    if (MODE === "phone") return window.SCRIPTABLE.call(name, args);
+    const res = await fetch(`/api/${name}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Key": WEB_KEY },
+      body: JSON.stringify({ args }),
+    });
+    if (!res.ok) throw new Error(`${name} failed: ${res.status}`);
+    return res.json();
+  },
+});
 
 function pad(n) { return n.toString().padStart(2, "0"); }
 function formatDate(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
@@ -42,21 +77,45 @@ function getCatIndex(name) {
 
 function applyTheme(theme) {
   document.body.dataset.theme = theme;
-  localStorage.setItem("todo-theme", theme);
+  store.set("todo-theme", theme);
   document.querySelectorAll(".theme-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.theme === theme);
   });
 }
 
-window.addEventListener("pywebviewready", init);
-if (window.pywebview) init();
+if (MODE !== "desktop") init();
+else {
+  window.addEventListener("pywebviewready", init);
+  if (window.pywebview) init();
+}
 
 async function init() {
-  applyTheme(localStorage.getItem("todo-theme") || "yellow");
+  applyTheme(store.get("todo-theme") || "yellow");
   bindEvents();
   await Promise.all([refreshDaysWithTasks(), loadCategories()]);
   renderCalendar();
   await loadTasks();
+  if (MODE === "desktop") showPhoneLink();
+  // Pick up changes made on another device when coming back to the app.
+  document.addEventListener("visibilitychange", async () => {
+    if (document.hidden) return;
+    await Promise.all([refreshDaysWithTasks(), loadCategories()]);
+    renderCalendar();
+    loadTasks();
+  });
+}
+
+async function showPhoneLink() {
+  const url = await api.get_web_url();
+  const el = document.getElementById("phoneLink");
+  el.textContent = "📱 open on phone";
+  el.title = `On the same Wi-Fi, open this in your phone's browser:\n${url}`;
+  el.addEventListener("click", () => {
+    navigator.clipboard?.writeText(url);
+    el.textContent = "📱 link copied ✓";
+    setTimeout(() => (el.textContent = "📱 open on phone"), 1800);
+  });
+  el.classList.remove("hidden");
 }
 
 function bindEvents() {
@@ -64,7 +123,7 @@ function bindEvents() {
   document.getElementById("taskInput").addEventListener("keydown", e => {
     if (e.key === "Enter") addTask();
   });
-  document.getElementById("tabToday").addEventListener("click", () => switchTab("today"));
+  document.getElementById("tabTodo").addEventListener("click", () => switchTab("todo"));
   document.getElementById("tabCompleted").addEventListener("click", () => switchTab("completed"));
   document.getElementById("prevMonth").addEventListener("click", () => changeMonth(-1));
   document.getElementById("nextMonth").addEventListener("click", () => changeMonth(1));
@@ -90,7 +149,7 @@ function bindEvents() {
 
 function switchTab(tab) {
   state.activeTab = tab;
-  document.getElementById("tabToday").classList.toggle("active", tab === "today");
+  document.getElementById("tabTodo").classList.toggle("active", tab === "todo");
   document.getElementById("tabCompleted").classList.toggle("active", tab === "completed");
   loadTasks();
 }
@@ -107,13 +166,15 @@ function jumpToToday() {
   state.viewMonth = now.getMonth();
   state.viewYear = now.getFullYear();
   state.selectedDate = formatDate(now);
+  state.activeCategory = null;
+  renderCategories();
   renderCalendar();
   loadTasks();
 }
 
 async function refreshDaysWithTasks() {
   try {
-    state.daysWithTasks = await window.pywebview.api.get_days_with_tasks();
+    state.daysWithTasks = await api.get_days_with_tasks();
   } catch (e) {
     state.daysWithTasks = {};
   }
@@ -154,6 +215,8 @@ function renderCalendar() {
 
 function selectDate(dateStr) {
   state.selectedDate = dateStr;
+  state.activeCategory = null;
+  renderCategories();
   renderCalendar();
   loadTasks();
 }
@@ -162,7 +225,7 @@ function selectDate(dateStr) {
 
 async function loadCategories() {
   try {
-    state.categories = await window.pywebview.api.get_categories();
+    state.categories = await api.get_categories();
   } catch (e) {
     state.categories = [];
   }
@@ -184,7 +247,9 @@ function renderCategories() {
 
   state.categories.forEach((cat, idx) => {
     const item = document.createElement("div");
-    item.className = "cat-item";
+    item.className = "cat-item" + (cat === state.activeCategory ? " active" : "");
+    item.title = `Show all "${cat}" tasks`;
+    item.addEventListener("click", () => selectCategory(cat));
 
     const dot = document.createElement("span");
     dot.className = "cat-dot";
@@ -198,7 +263,10 @@ function renderCategories() {
     del.className = "cat-del";
     del.textContent = "✕";
     del.title = `Delete "${cat}"`;
-    del.addEventListener("click", () => deleteCategory(cat));
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      deleteCategory(cat);
+    });
 
     item.append(dot, name, del);
     list.appendChild(item);
@@ -218,11 +286,20 @@ function refreshCategorySelect() {
   if (state.categories.includes(prev)) select.value = prev;
 }
 
+function selectCategory(cat) {
+  // Clicking the active category again goes back to the selected day.
+  state.activeCategory = state.activeCategory === cat ? null : cat;
+  renderCategories();
+  // New tasks added from this view get the same category by default.
+  if (state.activeCategory) document.getElementById("categorySelect").value = cat;
+  loadTasks();
+}
+
 async function addCategory() {
   const input = document.getElementById("catInput");
   const name = input.value.trim();
   if (!name) return;
-  state.categories = await window.pywebview.api.add_category(name);
+  state.categories = await api.add_category(name);
   input.value = "";
   document.getElementById("addCatForm").classList.add("hidden");
   renderCategories();
@@ -230,7 +307,8 @@ async function addCategory() {
 }
 
 async function deleteCategory(name) {
-  state.categories = await window.pywebview.api.delete_category(name);
+  state.categories = await api.delete_category(name);
+  if (state.activeCategory === name) state.activeCategory = null;
   renderCategories();
   refreshCategorySelect();
   loadTasks();
@@ -243,16 +321,18 @@ async function addTask() {
   const text = input.value.trim();
   if (!text) return;
   const category = document.getElementById("categorySelect").value;
-  await window.pywebview.api.add_task(state.selectedDate, text, category);
+  await api.add_task(state.selectedDate, text, category);
   input.value = "";
   input.focus();
   await refreshDaysWithTasks();
   renderCalendar();
-  if (state.activeTab === "today") loadTasks();
+  loadTasks();
 }
 
 async function loadTasks() {
-  const allTasks = await window.pywebview.api.get_tasks(state.selectedDate);
+  if (state.activeCategory) return loadCategoryTasks();
+
+  const allTasks = await api.get_tasks(state.selectedDate);
   const showingCompleted = state.activeTab === "completed";
   const filtered = allTasks.filter(t => t.done === showingCompleted);
 
@@ -265,21 +345,65 @@ async function loadTasks() {
   list.innerHTML = "";
 
   if (filtered.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = showingCompleted
+    list.appendChild(emptyState(showingCompleted
       ? "no completed tasks for this day yet."
-      : "no tasks for this day. add one above ✿";
-    list.appendChild(empty);
+      : "no tasks for this day. add one above ✿"));
     return;
   }
 
   [...filtered].reverse().forEach(task => {
-    list.appendChild(renderTaskRow(task));
+    list.appendChild(renderTaskRow(task, state.selectedDate));
   });
 }
 
-function renderTaskRow(task) {
+// All tasks with the active category, across every day, grouped by date.
+async function loadCategoryTasks() {
+  const cat = state.activeCategory;
+  const tasks = await api.get_tasks_by_category(cat);
+  const showingCompleted = state.activeTab === "completed";
+  const filtered = tasks.filter(t => t.done === showingCompleted);
+
+  document.getElementById("sectionTitle").textContent =
+    `${cat} — ${showingCompleted ? "completed" : "to-do"}`;
+
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  if (filtered.length === 0) {
+    list.appendChild(emptyState(showingCompleted
+      ? `no completed "${cat}" tasks yet.`
+      : `nothing left to do in "${cat}" ✿`));
+    return;
+  }
+
+  let lastDate = null;
+  filtered.forEach(task => {
+    if (task.date !== lastDate) {
+      lastDate = task.date;
+      const hd = document.createElement("div");
+      hd.className = "date-group";
+      hd.textContent = sectionLabel(task.date, "");
+      hd.title = "Go to this day";
+      hd.addEventListener("click", () => {
+        const d = parseDate(task.date);
+        state.viewMonth = d.getMonth();
+        state.viewYear = d.getFullYear();
+        selectDate(task.date);
+      });
+      list.appendChild(hd);
+    }
+    list.appendChild(renderTaskRow(task, task.date));
+  });
+}
+
+function emptyState(text) {
+  const empty = document.createElement("div");
+  empty.className = "empty-state";
+  empty.textContent = text;
+  return empty;
+}
+
+function renderTaskRow(task, date) {
   const row = document.createElement("div");
   row.className = "task-row";
 
@@ -287,7 +411,7 @@ function renderTaskRow(task) {
   check.className = "task-check" + (task.done ? " checked" : "");
   check.title = task.done ? "Mark as not done" : "Mark as done";
   check.addEventListener("click", async () => {
-    await window.pywebview.api.toggle_task(state.selectedDate, task.id);
+    await api.toggle_task(date, task.id);
     await refreshDaysWithTasks();
     renderCalendar();
     loadTasks();
@@ -297,7 +421,7 @@ function renderTaskRow(task) {
   text.className = "task-text" + (task.done ? " done" : "");
   text.textContent = task.text;
   text.title = "Click to edit";
-  text.addEventListener("click", () => editTask(task, text));
+  text.addEventListener("click", () => editTask(task, text, date));
 
   row.append(check, text);
 
@@ -321,7 +445,7 @@ function renderTaskRow(task) {
   del.textContent = "✕";
   del.title = "Delete task";
   del.addEventListener("click", async () => {
-    await window.pywebview.api.delete_task(state.selectedDate, task.id);
+    await api.delete_task(date, task.id);
     await refreshDaysWithTasks();
     renderCalendar();
     loadTasks();
@@ -331,7 +455,7 @@ function renderTaskRow(task) {
   return row;
 }
 
-function editTask(task, textEl) {
+function editTask(task, textEl, date) {
   const input = document.createElement("input");
   input.type = "text";
   input.value = task.text;
@@ -344,7 +468,7 @@ function editTask(task, textEl) {
   const commit = async () => {
     const newText = input.value.trim();
     if (newText && newText !== task.text) {
-      await window.pywebview.api.edit_task(state.selectedDate, task.id, newText);
+      await api.edit_task(date, task.id, newText);
     }
     loadTasks();
   };
