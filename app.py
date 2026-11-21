@@ -1,13 +1,10 @@
 """
-Todo App — Korean aesthetic local desktop to-do app.
+Todo App — Local Desktop To-Do App.
 
 Run locally with:
     python3 app.py
 
-All data is stored in a plain JSON file (tasks.json) in iCloud Drive
-(~/Library/Mobile Documents/com~apple~CloudDocs/Applications/mini-todo/) so it syncs
-between Macs. If iCloud Drive isn't available it falls back to
-~/Library/Application Support/mini-todo/.
+All data is stored in a plain JSON file (tasks.json) in iCloud Drive.
 
 On the iPhone, phone/mini-todo.js runs the same UI inside the Scriptable app
 and edits that iCloud file directly, so it works without the Mac.
@@ -133,7 +130,7 @@ class Api:
 
     def _save(self):
         with _lock:
-            # Write to a temp file and swap it in, so iCloud never syncs a half-written file.
+            # write to a temp file and swap it in, so iCloud never syncs a half-written file.
             tmp = DATA_FILE + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(self.data, f, indent=2)
@@ -246,7 +243,7 @@ class Api:
         return result
 
     def get_web_url(self):
-        # Find this Mac's Wi-Fi/LAN address (no packets are actually sent).
+        # find this Mac's Wi-Fi/LAN address (no packets are actually sent).
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             s.connect(("10.255.255.255", 1))
@@ -261,14 +258,14 @@ class Api:
 # -- local network server (for using the app from a phone) -----------------
 
 class _QuietHandler(WSGIRequestHandler):
-    # Browsers often try https:// first, which this plain-http server rejects
+    # browsers often try https:// first, which this plain-http server rejects
     # with a noisy "Bad request" log line before they fall back. Keep the terminal clean.
     def log_message(self, *args):
         pass
 
 
 class _FastServer(WSGIServer):
-    # The stock server_bind does a reverse DNS lookup (socket.getfqdn) that can
+    # the stock server_bind does a reverse DNS lookup (socket.getfqdn) that can
     # hang for a long time on some home networks. The name isn't needed.
     def server_bind(self):
         TCPServer.server_bind(self)
@@ -282,7 +279,7 @@ def start_web_server(api):
 
     @app.get("/")
     def index():
-        # Mark the page so script.js knows to use HTTP instead of window.pywebview.
+        # mark the page so script.js knows to use HTTP instead of window.pywebview.
         with open(os.path.join(UI_DIR, "index.html"), encoding="utf-8") as f:
             html = f.read()
         return html.replace("<head>", "<head>\n  <script>window.MINI_TODO_WEB = true;</script>", 1)
